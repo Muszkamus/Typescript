@@ -800,3 +800,290 @@ function printResults(results: CalculationResult) {
 const results = calculateInvestment(data); // results inferred as CalculationResult
 printResults(results); // function expects CalculationResult, so fully type-safe
 ```
+
+---
+
+# Section 6: Classes & Interfaces
+
+---
+
+# 69. Creating a First Class
+
+---
+
+1. class User { ... }
+   This declares a class named User.
+   Classes in TypeScript are templates for objects that bundle data (properties) and logic (methods).
+
+2. name: string; and age: number;
+   These are property declarations with explicit types.
+   You’re saying every User object must have:
+   a name that’s a string
+   an age that’s a number
+   TypeScript enforces this at compile time.
+
+3. constructor(n: string, a: number) { ... }
+   The constructor runs automatically when you call new User(...).
+   It accepts two parameters:
+   n → string (user’s name)
+   a → number (user’s age)
+   Inside, this.name = n; and this.age = a; assign those values to the new instance.
+
+4. Example usage
+
+```ts
+const radek = new User("Radek", 28);
+console.log(radek.name); // "Radek"
+console.log(radek.age); // 28
+```
+
+radek is now an instance of the User class — an object with those properties.
+
+### Summary
+
+You’re defining a strongly typed class with:
+clear property types (string, number)
+
+a constructor that initializes them
+TypeScript ensures you can’t create a User without the right arguments:
+
+```ts
+new User("Alice", "28"); // ❌ Error: "28" is not a number
+```
+
+---
+
+# 70. A Useful TypeScript Shortcut & Compiling to JavaScript
+
+---
+
+```ts
+class User {
+  constructor(public name: string, public age: number) {}
+}
+
+const radek = new User("Radek", 28);
+
+console.log(radek);
+```
+
+---
+
+# Different Access Modifiers
+
+---
+
+1: public (default)
+
+Accessible anywhere — inside or outside the class.
+
+Use when you want properties or methods to be openly available.
+
+```ts
+public name: string;
+```
+
+2: private
+
+Accessible only inside the class.
+
+Not accessible by subclasses or external code.
+
+Use for internal logic or state that shouldn’t be exposed.
+
+```ts
+private password: string;
+```
+
+3: protected
+
+Accessible inside the class and its subclasses, but not from outside.
+
+Use for things subclasses should inherit or override but external code shouldn’t touch.
+
+```ts
+protected id: number;
+```
+
+4: readonly
+
+Can be read publicly but set only once (at declaration or in constructor).
+
+Use for data that should never change after creation.
+
+```ts
+readonly createdAt: Date = new Date();
+```
+
+- public → open to all
+- private → internal only
+- protected → visible to subclasses
+- readonly → immutable after initialization
+
+---
+
+# 72. Marking Fields as "readonly"
+
+---
+
+```ts
+class User {
+  readonly hobbies: string[] = [];
+
+  constructor(public name: string, private age: number) {}
+}
+```
+
+- readonly hobbies: string[] → You cannot reassign the hobbies property itself.
+- But since it’s an array, you can still mutate its contents (push, pop, etc.).
+
+```ts
+const radek = new User("Radek", 28);
+
+radek.hobbies = []; // ❌ Error — reassignment not allowed
+radek.hobbies.push("Gym"); // ✅ Works — mutates array contents
+```
+
+Correct interpretation
+
+- readonly prevents rebinding the reference, not mutating the underlying object.
+- In this case, hobbies always points to the same array, but the array can change.
+
+---
+
+# 73. Understanding Getters
+
+---
+
+```ts
+class User {
+  constructor(private firstName: string, private lastName: string) {}
+  get fullName() {
+    // getter by default makes it public
+    return this.firstName + " " + this.lastName;
+  }
+}
+
+const radek = new User("Radek", "Doe");
+
+console.log(radek.fullName);
+```
+
+1: constructor(private firstName: string, private lastName: string)
+
+Both firstName and lastName are private.
+
+That means you cannot access them directly:
+
+```ts
+radek.firstName; // ❌ Error: private property
+```
+
+2: get fullName() { ... }
+
+This defines a getter method called fullName.
+
+It behaves like a property, not a function — no parentheses needed.
+
+By default, getters are public, unless you explicitly mark them otherwise.
+
+```ts
+radek.fullName; // ✅ Works
+```
+
+3: Why use a getter?
+
+It lets you control access to private fields.
+
+It computes a value dynamically without needing a separate method call.
+
+You can later add logic (e.g., capitalization or formatting) without changing how the class is used.
+
+---
+
+# 74. Setting Values with Setters
+
+---
+
+1: Private fields
+
+```ts
+   private \_firstName: string = "";
+   private \_lastName: string = "";
+```
+
+Only accessible inside the class.
+
+External code cannot modify them directly — prevents accidental misuse.
+
+2: Setters with validation
+
+```ts
+set firstName(name: string) {
+  if (name.trim() === "") throw new Error("Invalid name");
+  this._firstName = name;
+}
+```
+
+The set keyword defines a property setter, not a method.
+
+You can assign like a normal property (radek.firstName = "Radek").
+
+The validation ensures you can’t set an empty string.
+
+Same logic for lastName.
+
+3: Getter
+
+```ts
+get fullName() {
+return this.\_firstName + " " + this.\_lastName;
+}
+```
+
+Exposes a computed property without exposing the raw fields.
+
+Automatically public.
+
+Used like a property (radek.fullName), not like a function call.
+
+4: Runtime result
+
+```ts
+const radek = new User();
+radek.firstName = "Radek";
+radek.lastName = "Doe";
+console.log(radek.fullName);
+```
+
+```ts
+class User {
+  private _firstName: string = "";
+  private _lastName: string = "";
+
+  set firstName(name: string) {
+    if (name.trim() === "") {
+      throw new Error("Invalid name");
+    }
+    this._firstName = name;
+  }
+  set lastName(name: string) {
+    if (name.trim() === "") {
+      throw new Error("Invalid name");
+    }
+    this._lastName = name;
+  }
+
+  get fullName() {
+    // getter by default makes it public
+    return this._firstName + " " + this._lastName;
+  }
+}
+
+const radek = new User();
+
+radek.firstName = "Radek";
+radek.lastName = "Doe";
+
+console.log(radek.fullName);
+```
