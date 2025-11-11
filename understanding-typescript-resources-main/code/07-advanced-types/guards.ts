@@ -1,19 +1,21 @@
-type FileSource = { type: 'file'; path: string };
+type FileSource = { type: "file"; path: string };
 const fileSource: FileSource = {
-  type: 'file',
-  path: 'some/path/to/file.csv',
+  type: "file",
+  path: "some/path/to/file.csv",
 };
 
-type DBSource = { type: 'db', connectionUrl: string };
+type DBSource = { type: "db"; connectionUrl: string };
 const dbSource: DBSource = {
-  type: 'db',
-  connectionUrl: 'some-connection-url',
+  type: "db",
+  connectionUrl: "some-connection-url",
 };
 
 type Source = FileSource | DBSource;
 
+//  function isFile(source: Source): source is FileSource
+
 function isFile(source: Source) {
-  return source.type === 'file';
+  return source.type === "file";
 }
 
 function loadData(source: Source) {
@@ -42,16 +44,16 @@ class Admin {
   }
 }
 
-const user = new User('Max');
-const admin = new Admin(['ban', 'restore']);
+const user = new User("Max");
+const admin = new Admin(["ban", "restore"]);
 
 type Entity = User | Admin;
 
 function init(entity: Entity) {
   if (entity instanceof User) {
+    // instanceof is a runtime operator — it checks whether an object is created from (or inherits from) a specific class.
     entity.join();
     return;
   }
-
   entity.scan();
 }

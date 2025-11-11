@@ -1056,17 +1056,37 @@ radek.lastName = "Doe";
 console.log(radek.fullName);
 ```
 
+---
+
+A setter is a special method that defines what happens when a value is assigned to a property from outside the class. It doesn’t automatically change the class’s state — it only mutates internal values if you explicitly tell it to inside the setter.
+
+A getter defines what happens when that property is read. It can return a computed or formatted value based on the class’s internal data, but it never changes the state of the class itself.
+
+In short:
+
+Setter → handles controlled assignment (can validate or modify before saving).
+
+Getter → handles controlled access (can calculate or format before returning).
+
+Neither acts automatically — they only do what you explicitly define in their bodies.
+
 ```ts
 class User {
+  // Private fields — only accessible inside the class
   private _firstName: string = "";
   private _lastName: string = "";
 
+  // === SETTERS ===
+  // A setter lets you control how a property is *assigned*.
+  // It looks like a method but is called like a normal property: radek.firstName = "Radek"
   set firstName(name: string) {
+    // Basic validation: trim() removes whitespace
     if (name.trim() === "") {
-      throw new Error("Invalid name");
+      throw new Error("Invalid name"); // prevents empty input
     }
-    this._firstName = name;
+    this._firstName = name; // if valid, save it to the private field
   }
+
   set lastName(name: string) {
     if (name.trim() === "") {
       throw new Error("Invalid name");
@@ -1074,16 +1094,464 @@ class User {
     this._lastName = name;
   }
 
+  // === GETTER ===
+  // A getter lets you *retrieve* a property value dynamically.
+  // It runs automatically when you access radek.fullName.
   get fullName() {
-    // getter by default makes it public
+    // Combines both private fields into one formatted string
     return this._firstName + " " + this._lastName;
   }
 }
 
 const radek = new User();
 
-radek.firstName = "Radek";
-radek.lastName = "Doe";
+// Calling the setters (not functions — just assignments)
+radek.firstName = "Radek"; // setter firstName runs → stores "Radek" in _firstName
+radek.lastName = "Doe"; // setter lastName runs → stores "Doe" in _lastName
 
+// Accessing the getter (again, no parentheses)
 console.log(radek.fullName);
+// getter fullName runs → combines both names and returns "Radek Doe"
+
+// === OUTPUT ===
+// Radek Doe
+```
+
+---
+
+# 75. Exploring Static Properties & Methods
+
+---
+
+```ts
+class User {
+  // === STATIC FIELD ===
+  static eid = "USER";
+  // Belongs to the _class itself_, not to individual objects (instances)
+
+  // === STATIC METHOD ===
+  static greet() {
+    console.log("Hello");
+  }
+}
+
+// Accessing static members directly via the class name
+console.log(User.eid); // Logs: "USER"
+User.greet(); // Logs: "Hello"
+```
+
+🧩 Explanation
+static keyword means the property or method belongs to the class itself, not to instances created from it.
+In other words, User.eid exists, but radek.eid (if you made const radek = new User()) would not.
+
+User.eid — accesses the static property.
+
+User.greet() — calls the static method directly on the class.
+
+You use static members when the data or behavior is shared across all instances — for example:
+
+Utility methods (Math.random() is a static method).
+
+Constants or configuration values (User.roleName = "Admin").
+
+---
+
+# 76. Understanding Inheritance
+
+---
+
+```ts
+class Employee extends User {
+  // The class `Employee` inherits everything from `User`.
+  // That means it gets User's properties, methods, and static members (if not private).
+
+  constructor(public jobTitle: string) {
+    super(); // ✅ must be called before using "this"
+
+    // You could also set inherited fields after calling super, e.g.:
+    // super.firstName = "Max"; // if User had a public firstName
+  }
+
+  work() {
+    // You can add new methods or override inherited ones
+    console.log(`${this.jobTitle} is working`);
+  }
+}
+```
+
+🧩 Explanation
+
+extends User → makes Employee a subclass of User.
+This is classical inheritance: Employee inherits all public and protected members of User.
+
+constructor(public jobTitle: string) → defines a constructor that also automatically creates a property jobTitle (TypeScript shortcut syntax).
+It means each Employee instance will have a jobTitle field.
+
+super() → calls the parent class constructor (User’s).
+In JavaScript and TypeScript, you must call super() in a derived class before accessing this, otherwise it throws an error.
+This initializes the parent class’s part of the object.
+
+work() → a custom method specific to Employee.
+It’s how subclasses extend base functionality.
+
+---
+
+# 77. The "protected" Modifier
+
+---
+
+```ts
+class Employee extends User {
+  constructor(public jobTitle: string) {
+    super(); // ✅ must be called before using `this`
+  }
+
+  work() {
+    console.log(this._firstName);
+    // ❌ ERROR: Property '_firstName' is private and only accessible within class 'User'.
+  }
+}
+```
+
+| Modifier      | Accessible inside class | Accessible in subclasses | Accessible outside |
+| ------------- | ----------------------- | ------------------------ | ------------------ |
+| **private**   | ✅                      | ❌                       | ❌                 |
+| **protected** | ✅                      | ✅                       | ❌                 |
+| **public**    | ✅                      | ✅                       | ✅                 |
+
+---
+
+# 78. Making Sense Of Abstract Classes
+
+---
+
+```ts
+abstract class UIElement {
+  constructor(public identifier: string) {}
+
+  clone(targetLocation: string) {
+    // logic to duplicate the UI element
+    console.log(`Cloning ${this.identifier} to ${targetLocation}`);
+  }
+}
+```
+
+abstract class → cannot be instantiated directly.
+You can’t do new UIElement("header") — it’s meant to be a blueprint for subclasses.
+The constructor sets a public property identifier automatically (TypeScript shorthand for this.identifier = identifier).
+The clone() method defines a common behavior that all subclasses can use or override.
+
+```ts
+class SideDrawerElement extends UIElement {
+  constructor(public identifier: string, public position: "left" | "right") {
+    super(identifier); // ✅ must call parent constructor
+  }
+}
+```
+
+extends UIElement → inherits everything from UIElement, including the identifier and the clone() method.
+The constructor adds an extra property — position — that’s specific to the subclass.
+super(identifier) → calls the base class constructor to initialize inherited fields.
+
+| Concept          | Purpose                                                                                  |
+| ---------------- | ---------------------------------------------------------------------------------------- |
+| `abstract class` | Template that cannot be instantiated directly. Used to define shared structure/behavior. |
+| `super()`        | Initializes the parent class’s constructor and fields.                                   |
+| Inheritance      | Subclass (`SideDrawerElement`) reuses and extends base functionality.                    |
+| Public shorthand | `public identifier: string` both declares and assigns the field in one step.             |
+
+---
+
+# 81. Interfaces As Object Types
+
+---
+
+```ts
+interface Authenticatable {
+  // Tells TypeScript: “user must follow the Authenticatable interface shape.”
+  // The assigned object ✅ matches that shape exactly:
+  // It has the required properties (email, password)
+  // It implements both methods (login, logout)
+  // TypeScript confirms type safety — if you miss or rename a property, you’ll get an error.
+  email: string;
+  password: string;
+
+  login(): void;
+  logout(): void;
+}
+let user: Authenticatable;
+
+user = {
+  email: "test@gmail.com",
+  password: "qwerty",
+  login() {
+    // reach out to the database
+  },
+  logout() {
+    // clear the session
+  },
+};
+```
+
+Example
+
+```ts
+class User implements Authenticatable {
+  constructor(public email: string, public password: string) {}
+
+  login() {
+    console.log(`Logging in ${this.email}`);
+  }
+
+  logout() {
+    console.log(`${this.email} logged out`);
+  }
+}
+
+const radek = new User("radek@gmail.com", "qwerty");
+radek.login(); // "Logging in radek@gmail.com"
+```
+
+| Concept               | Meaning                                                                                 |
+| --------------------- | --------------------------------------------------------------------------------------- |
+| **interface**         | Describes the required structure (type contract).                                       |
+| **implements**        | Ensures a class follows the interface’s structure.                                      |
+| **Object assignment** | Must include all properties/methods defined in the interface.                           |
+| **No runtime code**   | Interfaces disappear after compilation — they’re purely for compile-time type checking. |
+
+---
+
+# 82. Interfaces vs Type Aliases & Understanding Declaration Merging
+
+---
+
+| Use `interface` for                         | Use `type` for                        |
+| ------------------------------------------- | ------------------------------------- |
+| OOP-style architecture (classes, contracts) | Complex types (unions, intersections) |
+| Extending or merging                        | Primitive or function aliases         |
+| Public APIs / Libraries                     | Internal utilities & composition      |
+| Clear structure                             | Flexible composition                  |
+
+---
+
+# 84. Implementing Interfaces
+
+---
+
+```ts
+interface Authenticatable {
+  // Defines a contract (shape) — any class implementing it must include all those properties and methods (email, password, login, logout).
+  email: string;
+  password: string;
+
+  login(): void;
+  logout(): void;
+}
+
+interface AuthenticatableAdmin extends Authenticatable {
+  role: "admin" | "superadmin";
+}
+
+const admin: AuthenticatableAdmin = {
+  // AuthenticatableAdmin extends the base interface, meaning it inherits all its members and adds one (role).
+  email: "...",
+  password: "...",
+  role: "admin",
+  login() {},
+  logout() {},
+};
+
+class AuthenticatableUser implements Authenticatable {
+  // The implements keyword enforces that the class follows the interface exactly.
+  // If you miss one property or method, TypeScript throws a compile-time error.
+  constructor(public email: string, public password: string) {}
+
+  // Declares email and password as public class fields.
+  // Initializes them automatically from constructor arguments.
+
+  // These satisfy the methods required by the interface.
+  // Right now they’re empty, but in real systems they’d contain logic like:
+  // Checking credentials against a database
+  // Generating a session or token
+  // Logging the action for auditing
+
+  login() {}
+  logout() {}
+}
+
+function authenticate(user: Authenticatable) {
+  user.login();
+}
+
+let user: Authenticatable;
+user = {
+  email: "test@gmail.com",
+  password: "qwerty",
+  login() {
+    // reach out to the database
+  },
+  logout() {
+    // clear the session
+  },
+};
+authenticate(user);
+```
+
+### 🧠 Why this pattern matters (especially in fintech)
+
+Interfaces define security-critical contracts (e.g., every auth-related class must implement login() and logout()).
+Classes encapsulate state + behavior (email, password, session management).
+You can now swap different implementations easily:
+
+```ts
+class GoogleUser implements Authenticatable { ... }
+class BiometricUser implements Authenticatable { ... }
+
+```
+
+Both can plug into the same AuthService that depends only on the interface, not the concrete class — aligning perfectly with the Dependency Inversion Principle (the "D" in SOLID).
+
+| Concept                  | Purpose                                      |
+| ------------------------ | -------------------------------------------- |
+| `interface`              | Defines a structural contract (the “what”)   |
+| `extends`                | Inherits and refines that contract           |
+| `implements`             | Enforces the contract in a concrete class    |
+| Structural typing        | Any object with the right shape is accepted  |
+| Compile-time enforcement | Prevents missing methods or properties early |
+
+---
+
+# Section 7: Advanced Types
+
+---
+
+# 89. Intersection Types
+
+---
+
+```ts
+type FileData = {
+  // Describes information about a file — its path and its content.
+  path: string;
+  content: string;
+};
+type DatabaseData = {
+  // Represents connection details for a database — a connectionUrl and some credentials.
+  connectionUrl: string;
+  credentials: string;
+};
+type Status = {
+  // A generic reusable status structure (shared across different resources).
+  isOpen: string;
+  errorMessage?: string;
+};
+
+type AccessedFileData = FileData & Status;
+type AccessedDatabaseData = DatabaseData & Status;
+
+const file: AccessedFileData = {
+  path: "/config/settings.json",
+  content: "{ key: 'value' }",
+  isOpen: "true",
+};
+
+const db: AccessedDatabaseData = {
+  connectionUrl: "postgres://localhost:5432/mydb",
+  credentials: "admin:1234",
+  isOpen: "false",
+  errorMessage: "Connection timeout",
+};
+```
+
+---
+
+# 90. More on Type Guards
+
+---
+
+```ts
+type FileSource = { type: "file"; path: string };
+const fileSource: FileSource = {
+  type: "file",
+  path: "some/path/to/file.csv",
+};
+//  function isFile(source: Source): source is FileSource
+
+function isFile(source: Source) {
+  return source.type === "file";
+}
+
+function loadData(source: Source) {
+  // if ('path' in source) {
+  if (isFile(source)) {
+    // source.path
+    // source.path; => use that to open the file
+    return;
+  }
+  // source.connectionUrl; => to reach out to database
+}
+```
+
+---
+
+# 95. Working with Function Overloads
+
+---
+
+```ts
+// Function overloading
+
+// These declare multiple “shapes” of the same function to the TypeScript compiler:
+// If you pass a string, TS will expect a string return.
+// If you pass an array, TS will expect a number return.
+
+function getLength(val: any[]): number;
+function getLength(val: string): string;
+
+function getLength(val: string | any[]) {
+  // This is the actual function body that handles both cases:
+  if (typeof val === "string") {
+    const numberOfWords = val.split(" ").length;
+    return `${numberOfWords} words`;
+  }
+
+  return val.length;
+}
+
+// TypeScript automatically picks the right overload based on the argument type — that’s the power of function overloading.
+const numOfWords = getLength("Does this work");
+numOfWords.length;
+const numOfItems = getLength(["Does this work", "at all?"]);
+```
+
+---
+
+# 96. Making Sense of Index Types
+
+---
+
+```ts
+type DataStore = {
+  // This is an index signature — it defines what all keys of the object can hold.
+
+  // Any property (string key) must have a value that’s either a boolean or a number.
+  [prop: string]: boolean | number;
+};
+
+let store: DataStore = {};
+
+store.id = 5; // ✅ OK — number allowed
+// store.name = "Radek" // ❌ Error —gir  string not assignable to boolean | number
+```
+
+---
+
+# 97. Constant Types with "as const"
+
+---
+
+```ts
+// Makes let as const, unavailable to change. Possibly good to use when changing is not allowed under specific scenario
+let roles = ["admin", "guest", "editor"] as const;
+console.log(roles);
 ```
