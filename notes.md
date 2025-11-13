@@ -1555,3 +1555,136 @@ store.id = 5; // ✅ OK — number allowed
 let roles = ["admin", "guest", "editor"] as const;
 console.log(roles);
 ```
+
+---
+
+# Section 8: Generic Types
+
+---
+
+# 103. Creating & Using a Generic Type
+
+---
+
+- T → general type (most common)
+- U, V → second/third type params
+- K → key
+- V → value
+- E → element (arrays)
+- Item → readable in domain-specific code
+- TypeOfUser → if you want clarity over brevity
+
+```ts
+let names: string[] = ["Rad", "Amy"]; // Normal type
+let names2: Array<string> = ["Rad", "Amy"]; // Generic type
+
+type DataStore<T> = {
+  // <T> is a generic type parameter — it’s a placeholder for whatever type you pass later.
+  [key: string]: T;
+};
+
+let store: DataStore<string | boolean> = {}; // Here, T becomes string | boolean.
+
+store.name = "Rad";
+
+store.isWorking = true;
+
+let nameStore: DataStore<string> = {};
+```
+
+---
+
+# 104. Generic Functions & Inference
+
+---
+
+```ts
+function merge<T, U>(a: T, b: U) {
+  return [a, b];
+}
+const ids = merge(1, "Rad"); // inferred = const ids: [number, string]
+
+const ids2 = merge<number, string>(1, "Rad"); // explicit
+
+console.log(ids);
+console.log(ids2);
+```
+
+When to provide generics manually?
+
+When TypeScript can’t infer the type.
+
+When you want stricter typing (e.g., forcing a narrower type).
+
+When using more complex objects where inference becomes ambiguous.
+
+```ts
+merge<{ id: number }, { name: string }>({ id: 1 }, { name: "Rad" });
+```
+
+Summary
+merge(1, "Rad") → TypeScript infers types automatically.
+
+merge<number, string>(...) → you explicitly specify them.
+
+Both are valid; inference is almost always preferred unless TS guesses wrong.
+
+---
+
+# 106. Generics & Constraints
+
+---
+
+```ts
+function mergeObj<T extends object>(a: T, b: T) {
+  //    T extends object means:
+  // T must be an object type
+  // both a and b must be the same type T
+  return { ...a, ...b };
+}
+const merged = mergeObj({ userName: "Rad" }, { age: 35 });
+// ❌ Error: userName object is not the same type as age object
+```
+
+TypeScript tries to infer T:
+
+For { userName: "Rad" }, T = { userName: string }
+
+For { age: 35 }, T = { age: number }
+
+These are not the same, so TS complains.
+
+---
+
+# 107. Constraints & Multiple Generic Types
+
+---
+
+```ts
+function mergeObj<T extends object, U extends object>(a: T, b: U) {
+  return { ...a, ...b };
+}
+const merged = mergeObj({ userName: "Rad" }, { age: 35 });
+console.log(merged);
+```
+
+---
+
+# 108. Working with Generic Classes & Interfaces
+
+---
+
+```ts
+class User<T> {
+  constructor(public id: T) {}
+}
+
+const user = new User("Rad");
+console.log(user.id);
+```
+
+---
+
+# Section 11: ECMAScript Decorators
+
+---
