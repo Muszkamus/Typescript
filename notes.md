@@ -1685,6 +1685,255 @@ console.log(user.id);
 
 ---
 
+# Section 10: Deriving Types From Types
+
+---
+
+# 119. Using "typeof"
+
+---
+
+```ts
+// A normal JavaScript constant containing a string value.
+const userName = "Rad";
+
+// Runtime "typeof" (JavaScript).
+// This runs in the console and prints the TYPE of the VALUE at runtime.
+// Output: "string"
+console.log(typeof userName);
+
+// TypeScript "typeof" (used in a TYPE position).
+// This does NOT run at runtime. It extracts the *type* of the variable.
+// Because userName is a constant and TS infers it as the literal "Rad",
+// the type becomes: type UserName = "Rad"
+type UserName = typeof userName;
+
+// This prints the actual value "Rad" to the console at runtime.
+console.log(userName);
+```
+
+---
+
+# 120. "typeof" & A More Useful Example
+
+---
+
+```ts
+// A plain JavaScript object. TypeScript infers the type automatically.
+const settings = {
+  difficulty: "easy",
+  minLevel: 10,
+  didStart: false,
+  players: ["john", "Jane"],
+};
+
+// Use TypeScript's "typeof" in a *type position*.
+// This copies the entire inferred type of the "settings" variable.
+// TS expands it to an object type with the exact structure above.
+//
+// So "Settings" becomes:
+//
+// type Settings = {
+//   difficulty: string;
+//   minLevel: number;
+//   didStart: boolean;
+//   players: string[];
+// };
+//
+// This keeps your types synced with your data without rewriting them manually.
+type Settings = typeof settings;
+
+// A function that accepts only values matching the "Settings" type.
+// Anything missing or incorrectly typed will trigger an error.
+function loadData(settings: Settings) {}
+```
+
+---
+
+# 122. Extracting Keys with "keyof"
+
+---
+
+---
+
+---
+
+---
+
+---
+
+---
+
 # Section 11: ECMAScript Decorators
 
 ---
+
+What decorators are
+
+Decorators are a metaprogramming feature.
+
+They’re functions you attach to code (class, property, method) with @something.
+
+Their purpose is to change or extend the behavior of the code they’re attached to.
+
+Example idea:
+
+@Length(5, 20)
+title: string;
+
+This decorator adds validation logic to that field.
+
+Why decorators exist
+
+They let you write code that modifies other code in a clean, declarative way.
+
+They’re heavily used in frameworks like Angular, class-validator, NestJS, etc.
+
+Two kinds of decorators in TypeScript
+
+1. ECMAScript decorators (official)
+
+Part of the JavaScript proposal (currently stage 3 → close to implemented).
+
+TypeScript supports them already.
+
+Will eventually work in plain JavaScript.
+
+Modern syntax.
+
+2. Experimental decorators (old)
+
+Older proposal — won’t be added to JavaScript.
+
+Only available in TypeScript.
+
+Still widely used in existing TS projects (Angular, NestJS).
+
+Requires "experimentalDecorators": true in tsconfig.json.
+
+Big picture
+
+Decorators = attach @something to a class/property/method → decorator function runs → your code behavior changes.
+
+They’re optional — you can build whole apps without them.
+
+Useful for validation, dependency injection, metadata, routing, Angular components, etc.
+
+---
+
+# 135. Exploring Different Types of Decorators
+
+---
+
+Decorators are designed for class-based structures – classes, methods, fields, and accessors (getters/setters).
+
+They cannot be used on standalone functions or variables – only members of a class can be decorated.
+
+Two decorator syntaxes exist in TypeScript (ECMAScript and experimental), but details come later.
+
+Purpose of decorators is to modify or extend class behavior in a declarative, reusable way.
+
+The instructor will show how to create, type, and apply method and field decorators in practice.
+
+Why decorators cannot be used on plain functions
+
+Short answer:
+Because the decorator proposal in JavaScript was designed specifically for classes, not for free-standing functions.
+
+Longer explanation (still concise):
+
+The official ECMAScript decorator specification only supports class elements, not top-level functions.
+
+JavaScript functions at the top level aren’t part of the class metadata model, so they don’t have the same structure decorators rely on.
+
+Decorators work by receiving metadata about the class element they modify—its key, descriptor, access kind, etc.—which doesn’t exist for standalone functions.
+
+Allowing decorators on free functions would require a new syntax and new semantics for how those functions are analysed and modified, which was out of scope for the current proposal.
+
+---
+
+# 136. Building a First Decorator
+
+---
+
+```ts
+// A class decorator using the *new ECMAScript decorator signature*.
+// T = any class constructor type
+// ctx = metadata about what is being decorated (here: a class)
+function logger<T extends new (...args: any[]) => any>(
+  target: T,
+  ctx: ClassDecoratorContext
+) {
+  // The original class constructor before decoration
+  console.log(target);
+
+  // Metadata provided by the new decorator system (name, kind = 'class', etc.)
+  console.log(ctx);
+
+  // Decorators can return a *new modified class* that replaces the original.
+  // Here we create a subclass of the target.
+  return class extends target {
+    constructor(...args: any[]) {
+      // Call the original constructor
+      super(...args);
+
+      // Extra behavior added by the decorator
+      console.log("class constructor");
+      console.log(this); // logs the instance
+    }
+  };
+}
+
+// Applying the decorator to the class.
+// The decorator receives the class definition *before* it is instantiated.
+@logger
+class Person {
+  // Instance field
+  name = "Rad";
+
+  greet() {
+    console.log("Hi, I am " + this.name);
+  }
+}
+
+// Creating an instance of the decorated class.
+// Because the decorator returned a subclass, this instance is an instance of the modified class.
+const rad = new Person();
+
+// The instance now includes the extra constructor logic injected by the decorator.
+console.log(rad);
+```
+
+Decorators solve a real problem:
+
+Add behavior to classes without modifying the class itself.
+
+Examples from real frameworks:
+
+NestJS → @Controller, @Injectable, @Get
+
+Angular → @Component
+
+TypeORM → @Entity, @Column
+
+class-validator → @MinLength, @IsEmail
+
+They let you:
+
+add logging
+
+add metadata
+
+perform dependency injection
+
+auto-register classes
+
+wrap/extend methods
+
+enforce validation
+
+configure routing
+
+attach runtime behavior cleanly
+
+All without touching the internal code.

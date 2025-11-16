@@ -1,60 +1,22 @@
-function logger<T extends new (...args: any[]) => any>(
-  target: T,
-  ctx: ClassDecoratorContext
-) {
-  console.log('logger decorator');
-  console.log(target);
-  console.log(ctx);
-
-  return class extends target {
-    constructor(...args: any[]) {
-      super(...args);
-      console.log('class constructor');
-      console.log(this);
-    }
-  };
-}
-
 function autobind(
   target: (...args: any[]) => any,
-  ctx: ClassMethodDecoratorContext
+  ctx: ClassAccessorDecoratorContext
 ) {
-  ctx.addInitializer(function (this: any) {
-    this[ctx.name] = this[ctx.name].bind(this);
-  });
-
-  return function (this: any) {
-    console.log('Executing original function');
-    target.apply(this);
-  };
+  console.log(target, ctx);
 }
 
-function replacer<T>(initValue: T) {
-  return function replacerDecorator(
-    target: undefined,
-    ctx: ClassFieldDecoratorContext
-  ) {
-    console.log(target);
-    console.log(ctx);
-
-    return (initialValue: any) => {
-      console.log(initialValue);
-      return initValue;
-    };
-  };
-}
-
-@logger
 class Person {
-  @replacer('')
-  name = 'Max';
-
+  // Instance field
+  name = "Rad";
   @autobind
   greet() {
-    console.log('Hi, I am ' + this.name);
+    console.log("Hi, I am " + this.name);
   }
 }
 
-const max = new Person();
-const greet = max.greet;
-greet();
+// Creating an instance of the decorated class.
+// Because the decorator returned a subclass, this instance is an instance of the modified class.
+const rad = new Person();
+
+// The instance now includes the extra constructor logic injected by the decorator.
+console.log(rad);
