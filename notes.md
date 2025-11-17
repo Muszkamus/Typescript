@@ -2059,6 +2059,155 @@ type DataFileEvents = {
 
 ---
 
+# 129. Introducing Conditional Types
+
+---
+
+```ts
+type StringArray = string[]; // A simple alias for an array of strings.
+// type ElementType<T extends any[]> = T[number];
+
+// type Example1 = ElementType<StringArray>;
+
+// let text1 = 1;
+
+// type Example1 = ElementType<StringArray>;
+// type Example2 = ElementType<typeof text>;
+
+let text2 = 1;
+
+type GetElementType<T> = T extends any[] ? T[number] : never;
+
+// If T is an array → return the element type
+// If T is NOT an array → return never
+
+type Example1 = GetElementType<StringArray>;
+
+//  StringArray is an array, so:
+// StringArray[number] → string
+// Example1 becomes string
+
+type Example2 = GetElementType<typeof text2>;
+
+// typeof text2 → number
+// A number is not an array, so:
+// Example2 becomes never
+```
+
+---
+
+# 130. Conditional Types - Another Example
+
+---
+
+```ts
+type FullnamePerson = { firstName: string; lastName: string };
+// Shape required for someone to have a full name
+
+type FullNameOrNothing<T> = T extends FullnamePerson ? string : never;
+// If T matches FullnamePerson → return type is string
+// Otherwise → return type is never
+
+function getFullname<T extends object>(person: T): FullNameOrNothing<T> {
+  // T becomes the type of the object passed in
+
+  if (
+    "firstName" in person &&
+    "lastName" in person &&
+    person.firstName &&        // runtime check: field must exist and be truthy
+    person.lastName
+  ) {
+    return `${person.firstName} ${person.lastName}`
+      as FullNameOrNothing<T>; // TS can't see the narrowing → force the return type
+  }
+
+  throw new Error("No first name and / or last name found");
+  // If fields aren't present, the function never returns → matches return type "never"
+}
+
+const name1 = getFullname({});
+// {} does NOT match FullnamePerson → return type is never
+
+const name2 = getFullname({ firstName: "Rad", lastName: "Doe" });
+// Matches FullnamePerson → return type is string
+
+console.log(name1);
+// Runtime: this throws before returning anything
+
+```
+
+---
+
+# 131. Making Sense of the "infer" Keyword
+
+---
+
+```ts
+function add(a: number, b: number) {
+  return a + b;
+}
+// A normal function returning a number
+
+type AddFn = typeof add;
+// typeof add extracts the function's type signature
+
+type ReturnValueType<T> = T extends (...args: any[]) => infer RV ? RV : T;
+// If T is a function type, infer RV = its return value type
+// Otherwise, just return T unchanged
+
+type AddReturnValue = ReturnValueType<AddFn>;
+// AddFn is a function → TS infers RV = number
+// So AddReturnValue = number
+```
+
+---
+
+---
+
+---
+
+---
+
+---
+
+---
+
+---
+
+---
+
+---
+
+---
+
+---
+
+---
+
+---
+
+---
+
+---
+
+---
+
+---
+
+---
+
+---
+
+---
+
+---
+
+---
+
+---
+
+---
+
 ---
 
 ---
