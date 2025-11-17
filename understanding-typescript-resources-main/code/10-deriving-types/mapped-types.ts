@@ -1,24 +1,24 @@
-type Operations = {
-  readonly add: (a: number, b: number) => number;
-  readonly subtract: (a: number, b: number) => number;
+type ReadPermissions = "no-read" | "read";
+type WritePermissions = "no-write" | "write";
+
+type FilePermissions = `${ReadPermissions}-${WritePermissions}`;
+// "no-read-no-write" | "no-read-write" | "read-no-write" | "read-write"
+
+// TypeScript generates this union  — no manual typing.
+
+type DataFile = {
+  data: string;
+  permissions: FilePermissions; // A simple data file object where the permissions must be one of those 4 exact strings.
 };
 
-type Results<T> = {
-  [Key in keyof T]?: number;
-};
+type DataFileEventNames = `${keyof DataFile} changed`; // "data changed" | "permissions changed"
 
-let mathOperations: Operations = {
-  add(a: number, b: number) {
-    return a + b;
-  },
-  subtract(a: number, b: number) {
-    return a - b;
-  },
-};
+type DataFileEvents = {
+  [Key in DataFileEventNames]: () => void;
+  // A mapped type uses the string union created above to build an object with the exact event names as keys, each pointing to a callback function.
 
-let mathResults: Results<Operations> = {
-  add: mathOperations.add(5, 1),
-  subtract: mathOperations.subtract(5, 2),
+  // type DataFileEvents = {
+  //     "data changed": () => void;
+  //     "permissions changed": () => void;
+  // }
 };
-
-mathResults.add = 10;

@@ -1750,9 +1750,312 @@ function loadData(settings: Settings) {}
 
 ---
 
-# 122. Extracting Keys with "keyof"
+# 123. "keyof" & A More Useful Example
 
 ---
+
+```ts
+type User = { name: string; age: number };
+type UserKeys = keyof User;
+
+// 1. keyof creates a union of property names
+
+let validKey: UserKeys;
+
+validKey = "name";
+validKey = "age";
+
+//  2. The variable is restricted to only valid keys of the User type.
+// This is type-safe key referencing.
+
+// validKey = "name"; // OK
+// validKey = "age";  // OK
+// validKey = "random"; // // validKey = "random" ❌ Not allowed — "random" is NOT a key of type User ("name" | "age")
+
+function getProp<T extends object, U extends keyof T>(obj: T, key: U) {
+  //3. Understanding the generic constraints
+  // T extends object
+  // The function accepts any object.
+  // U extends keyof T
+  // U must be a key of that object.
+
+  // TypeScript forces key to be an actual property of the object passed in.
+
+  // So if T = { name: string; age: number },
+  // then U = "name" | "age".
+  const val = obj[key];
+
+  if (val === undefined || val === null) {
+    throw new Error("Accessing undefined or null value");
+  }
+
+  //   4. obj[key] is automatically type-safe
+  // Because key is constrained, TypeScript knows:
+  // If you pass "age" → you get a number
+  // If you pass "name" → you get a string
+
+  return val;
+}
+
+const user = { name: "Rad", age: 35 };
+
+const val = getProp(user, "age");
+
+console.log(val);
+```
+
+---
+
+```ts
+// Old way of thinking:
+// We have an object and we want to extract the "permissions" part.
+// (Imagine we want the value of that specific field.)
+
+// const appUser = {
+//   name: "Rad",
+//   age: 35,
+//   permissions: [
+//     { id: "p1", title: "Admin", description: "Admin Access" },
+//   ], // <-- This is the part we're focused on
+// };
+
+// -----------------------------
+// Indexed Type (TypeScript)
+// -----------------------------
+// This works like destructuring but for *types*, not values.
+
+// Value destructuring example:
+// const { permissions } = appUser;
+
+// Type extraction equivalent:
+// AppUser["permissions"] pulls out the *type* of that field.
+
+// Define the AppUser type (normal object type)
+type AppUser = {
+  name: string;
+  age: number;
+  permissions: {
+    id: string;
+    title: string;
+    description: string;
+  }[];
+};
+
+// Extract the type of the "permissions" property.
+// Result:
+// type Perms = {
+//   id: string;
+//   title: string;
+//   description: string;
+// }[]
+// (an array of permission objects)
+type Perms = AppUser["permissions"];
+```
+
+---
+
+# 125. Accessing Array Elements with Indexed Access Types
+
+---
+
+```ts
+
+type AppUser = {
+  name: string;
+  age: number;
+  permissions: {
+    id: string;
+    title: string;
+    description: string;
+  }[];
+};
+// AppUser["permissions"] extracts the *type* of the permissions array.
+
+type Perms = AppUser["permissions"];
+// Perms is now the type: { id: string; title: string; description: string; }[]
+
+type Perm = Perms[number];
+// Perm extracts the type of ONE element from the array above.
+// Equivalent to: { id: string; title: string; description: string }
+
+type Names = string[];
+// A normal array of strings.
+
+type Name = Names[number];
+// Name becomes the type of ONE array element → stringtype AppUser = {
+  name: string;
+  age: number;
+  permissions: {
+    id: string;
+    title: string;
+    description: string;
+  }[];
+};
+// AppUser["permissions"] extracts the *type* of the permissions array.
+
+type Perms = AppUser["permissions"];
+// Perms is now the type: { id: string; title: string; description: string; }[]
+
+type Perm = Perms[number];
+// Perm extracts the type of ONE element from the array above.
+// Equivalent to: { id: string; title: string; description: string }
+
+type Names = string[];
+// A normal array of strings.
+
+type Name = Names[number];
+// Name becomes the type of ONE array element → string
+```
+
+---
+
+# 126. Introducing Mapped Types
+
+---
+
+```ts
+// A type describing an object full of functions.
+
+type Operations = {
+  add: (a: number, b: number) => number;
+  subtract: (a: number, b: number) => number;
+};
+
+// For ANY object T, create a NEW object with the SAME keys,
+// but every value must be a number.
+type Results<T> = {
+  [K in keyof T]: number;
+};
+
+// An object that matches Operations: two functions.
+let mathOperations: Operations = {
+  add(a: number, b: number) {
+    return a + b;
+  },
+
+  subtract(a: number, b: number) {
+    return a - b;
+  },
+};
+
+// Create a new object where each key matches `Operations`,
+// but instead of functions, the values are numbers.
+
+let mathResults: Results<Operations> = {
+  add: mathOperations.add(1, 2),
+  subtract: mathOperations.subtract(5, 2),
+};
+```
+
+---
+
+# 127. Readonly Types & Optional Mapping
+
+---
+
+Readonly stops accidental internal changes that break logic.
+
+Examples:
+
+API responses that must not mutate
+
+React props
+
+Configuration files
+
+Immutable arrays
+
+Service functions that should never be replaced
+
+```ts
+// An object type whose properties are functions.
+// They are marked readonly so they cannot be reassigned.
+type Operations = {
+  readonly add: (a: number, b: number) => number;
+  readonly subtract: (a: number, b: number) => number;
+};
+
+// Create a new type based on Operations.
+// -readonly   → remove readonly so properties can be changed
+// ?           → make each property optional
+// number      → every value must be a number (not a function)
+type Results<T> = {
+  -readonly [K in keyof T]?: number;
+};
+
+// An object that matches the Operations type (two readonly functions).
+let mathOperations: Operations = {
+  add(a, b) {
+    return a + b;
+  },
+  subtract(a, b) {
+    return a - b;
+  },
+};
+
+// Build an object whose keys mirror Operations.
+// Each key now holds a number instead of a function.
+// Because properties are optional, you don't need all keys.
+let mathResults: Results<Operations> = {
+  add: mathOperations.add(1, 2), // produces a number → OK
+  subtract: mathOperations.subtract(5, 2),
+};
+
+// Allowed because we removed `readonly` using -readonly.
+// Also allowed because the property is optional.
+mathResults.add = 5;
+```
+
+### Another example of read only >
+
+```ts
+type User = {
+  readonly name: string;
+};
+
+const user: User = { name: "Rad" };
+user.name = "X"; // ❌ Not allowed — property is frozen
+```
+
+---
+
+# 128. Exploring Template Literal Types
+
+---
+
+✔ Why teams use this pattern
+
+• eliminates duplicated strings
+• enforces consistency
+• gives instant autocomplete
+• ties all types to one source of truth
+• handles event names without typos
+• extremely safe for large codebases
+
+```ts
+type ReadPermissions = "no-read" | "read";
+type WritePermissions = "no-write" | "write";
+
+type FilePermissions = `${ReadPermissions}-${WritePermissions}`;
+// "no-read-no-write" | "no-read-write" | "read-no-write" | "read-write"
+
+type DataFile = {
+  data: string;
+  permissions: FilePermissions; // A simple data file object where the permissions must be one of those 4 exact strings.
+};
+
+type DataFileEventNames = `${keyof DataFile} changed`; // "data changed" | "permissions changed"
+
+type DataFileEvents = {
+  [Key in DataFileEventNames]: () => void;
+  // A mapped type uses the string union created above to build an object with the exact event names as keys, each pointing to a callback function.
+
+  // type DataFileEvents = {
+  //     "data changed": () => void;
+  //     "permissions changed": () => void;
+  // }
+};
+```
 
 ---
 
